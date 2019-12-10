@@ -43,14 +43,14 @@ void Main()
 		.Last();
 	
 	Console.WriteLine(bestCenter);
+	Console.WriteLine(sightMap.Values.Count);
 	
 	//time to blow em up
-	//
 	int count = 0;
 	while (sightMap.Count > 0){	
 		foreach(var key in sightMap.Keys.OrderBy(k => k)){
 			var group = sightMap[key];
-			var destroyed = group[group.Count - 1].Add(bestCenter);
+			var destroyed = group[group.Count - 1];
 			group.RemoveAt(group.Count - 1);
 			Console.WriteLine($"{++count}: Destroyed {destroyed}");
 			if (group.Count == 0)
@@ -60,21 +60,12 @@ void Main()
 }
 
 static Dictionary<double, List<(int x, int y)>> GetSightMap(HashSet<(int x, int y)> map, (int x, int y) center){
-	var grouped = new Dictionary<double, List<(int x, int y)>>();
-	foreach(var asteroid in map){
-		if (asteroid == center)
-			continue;
-		var delta = asteroid.Sub(center);
-		var angle = delta.ToAngle();
-		if (angle < 0)
-			angle += 360;
-		if (!grouped.ContainsKey(angle)){
-			grouped[angle] = new List<(int, int)>();
-		}
-		grouped[angle].Add(delta);
-	}
+	var grouped = map
+		.GroupBy(a => a.Sub(center).ToAngle())
+		.ToDictionary(k => k.Key, k => k.ToList());
+		
 	foreach(var group in grouped){
-		group.Value.Sort((a, b) => b.SqDist().CompareTo(a.SqDist()));
+		group.Value.Sort((a, b) => b.Sub(center).SqDist().CompareTo(a.Sub(center).SqDist()));
 	}
 	return grouped;
 }
@@ -84,6 +75,9 @@ public static class TupleMethods {
 	public static (int x, int y) Sub(this (int x, int y) a, (int x, int y) b) => (a.x - b.x, a.y - b.y);
 	public static (int x, int y) Div(this (int x, int y) a, int b) => (a.x / b, a.y / b);
 	public static (int x, int y) Mul(this (int x, int y) a, int b) => (a.x * b, a.y * b);
-	public static double ToAngle(this (int x, int y) a, int offset = 90) => ((180/Math.PI)*Math.Atan2(a.y, a.x) + offset) % 360;
+	public static double ToAngle(this (int x, int y) a, int offset = 90){
+		var angle = ((180/Math.PI)*Math.Atan2(a.y, a.x) + offset) % 360;
+		return angle < 0 ? angle + 360 : angle;
+	}
 	public static double SqDist(this (int x, int y) a) => a.x * a.x + a.y * a.y;
 }
