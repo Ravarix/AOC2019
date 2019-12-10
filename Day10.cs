@@ -62,11 +62,12 @@ void Main()
 static Dictionary<double, List<(int x, int y)>> GetSightMap(HashSet<(int x, int y)> map, (int x, int y) center){
 	var grouped = map
 		.GroupBy(a => a.Sub(center).ToAngle())
-		.ToDictionary(k => k.Key, k => k.ToList());
-		
-	foreach(var group in grouped){
-		group.Value.Sort((a, b) => b.Sub(center).SqDist().CompareTo(a.Sub(center).SqDist()));
-	}
+		.ToDictionary(grp => grp.Key, 
+			grp => grp
+				.OrderBy(a => a.Sub(center).SqDist())
+				.Reverse()
+				.ToList());
+
 	return grouped;
 }
 
